@@ -1,0 +1,12 @@
+[
+  "Tests/test_listener.py::remoteTests::testListener_BROKEN", 
+  "Tests/test_plex.py::plexTests::testConfigs", 
+  "Tests/test_plex.py::plexTests::testDirectConnection", 
+  "Tests/test_plex.py::plexTests::testMyPlexConnection", 
+  "Tests/test_plex.py::plexTests::testMyPlexUsers", 
+  "Tests/test_plexee.py::TestPlexee::testPlexeeInterface", 
+  "Tests/test_plexee.py::TestPlexee::test_plex_config", 
+  "Tests/test_plexee.py::TestPlexee::test_users", 
+  "Tests/test_util.py::utilTests::testLogging", 
+  "Tests/test_util.py::utilTests::testSsl"
+]

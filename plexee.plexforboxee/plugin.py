@@ -6,9 +6,6 @@ if ( __name__ == "__main__" ):
 	plexee = Plexee()
 	config = plexee.config
 	
-	#Jinxo: Set debug on to get all debug messages
-	#config.SetValue("debug", "1")
-	
 	#default to autodiscover on first start of application
 	if not config.isManualConnectOn() and not config.isAutoConnectOn() and not config.isMyPlexConnectOn():
 		config.setAutoConnectOn()

@@ -11,13 +11,13 @@ homeWindow.load()
 	<onload lang="python">homeWindow.unload()</onload>
 	
 	<controls>
-		<!-- BACKGROUND =============================================================-->
+    <!-- BACKGROUND =============================================================-->
 		
 		<!-- page id -->
-		<control type="edit" id="1">
-			<visible>False</visible>
-			<label>14000</label>
-		</control>
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
 		
 		<!-- page background -->
 		<control type="image">
@@ -69,7 +69,7 @@ homeWindow.load()
 					<ondown>700</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">plexee.getHomeWindow().itemClicked(110)</onclick>
+						<onclick lang="Python">homeWindow.localListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">
@@ -166,7 +166,7 @@ homeWindow.load()
           <ondown>200</ondown>
 
           <content type="action">
-            <onclick lang="Python">homeWindow.itemClicked(710)</onclick>
+            <onclick lang="Python">homeWindow.searchListClicked()</onclick>
           </content>
 
           <itemlayout width="175">
@@ -263,7 +263,7 @@ homeWindow.load()
 					<ondown>400</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">homeWindow.itemClicked(210)</onclick>
+						<onclick lang="Python">homeWindow.sharedListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">
@@ -361,7 +361,7 @@ homeWindow.load()
 					<ondown>500</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">homeWindow.itemClicked(410)</onclick>
+						<onclick lang="Python">homeWindow.recentListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">
@@ -389,7 +389,7 @@ homeWindow.load()
 							<aligny>center</aligny>
 							<font>font12</font>
 							<textcolor>white</textcolor>
-							<label>[B]*$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
+							<label>[B]$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
 							<visible>IntegerGreaterThan(ListItem.Property(custom:unwatchedcount), 0)</visible>
 						</control>						
 						
@@ -442,7 +442,7 @@ homeWindow.load()
 							<aligny>center</aligny>
 							<font>font12</font>
 							<textcolor>white</textcolor>
-							<label>[B]*$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
+							<label>[B]$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
 							<visible>IntegerGreaterThan(ListItem.Property(custom:unwatchedcount), 0)</visible>
 						</control>						
 						
@@ -498,7 +498,7 @@ homeWindow.load()
 					<ondown>300</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">homeWindow.itemClicked(510)</onclick>
+						<onclick lang="Python">homeWindow.ondeckListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">
@@ -595,7 +595,7 @@ homeWindow.load()
 					<ondown>800</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">homeWindow.itemClicked(310)</onclick>
+						<onclick lang="Python">homeWindow.channelListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">
@@ -692,7 +692,7 @@ homeWindow.load()
 					<ondown>100</ondown>
 					
 					<content type="action">
-						<onclick lang="Python">homeWindow.itemClicked(810)</onclick>
+						<onclick lang="Python">homeWindow.queueListClicked()</onclick>
 					</content>
 					
 					<itemlayout width="175">

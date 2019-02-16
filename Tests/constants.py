@@ -1,4 +1,5 @@
-﻿HOST='10.1.3.201'
+﻿HOST='192.168.8.200'
 PORT='32400'
-USERNAME='userid'
-PASSWORD='password'
+USERNAME='mcneishh'
+PASSWORD='purPle23plx'
+PIN='1399'

@@ -2,9 +2,21 @@
 <window type="window" id="14003">
 	<defaultcontrol>200</defaultcontrol>
 	<allowoverlay>no</allowoverlay>
+	<onload lang="python">
+<![CDATA[
+albumWindow = plexee.getAlbumWindow()
+albumWindow.load()
+]]>	
+	</onload>	
+	<onunload lang="python">albumWindow.unload()</onunload>
 	
-	<controls>		
-		<!-- BACKGROUND =============================================================-->
+	<controls>
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- BACKGROUND =============================================================-->
 		<!-- display art -->
 		<control type="image">
 			<width>1280</width>

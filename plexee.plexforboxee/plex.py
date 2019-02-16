@@ -9,6 +9,7 @@ import urllib2
 import urlparse
 import util
 import uuid
+import mc
 from elementtree import ElementTree
 
 class PlexRequestError(Exception):
@@ -19,6 +20,9 @@ class PlexRequestError(Exception):
 class PlexConnectionFailedError(Exception):
 	pass
 
+class PlexAuthenticationError(Exception):
+	pass
+
 ##
 # Manages the interaction with the Plex ecosystem
 #
@@ -27,7 +31,7 @@ class PlexManager(object):
 	Manages the interaction with the Plex ecosystem
 	"""
 	ERR_NO_MYPLEX_SERVERS=1
-	#ERR_MPLEX_CONNECT_FAILED=2
+	ERR_MPLEX_AUTH_FAILED=2
 	ERR_MYPLEX_NOT_AUTHENTICATED=3
 
 	SUCCESS=4
@@ -39,7 +43,8 @@ class PlexManager(object):
 	__instance = None
 
 	@staticmethod
-	def Instance(): return PlexManager.__instance;
+	def Instance():
+		return PlexManager.__instance
 
 	def __init__(self, props):
 		if not PlexManager.__instance is None:
@@ -54,7 +59,9 @@ class PlexManager(object):
 		self.xPlexProduct = props['product']
 		self.xPlexVersion = props['version']
 		self.xPlexDevice = props['device']
+		self.xPlexDeviceClass = props['deviceClass']
 		self.xPlexClientIdentifier = props['deviceid']
+		self.xPlexClientPort = props['port']
 		PlexManager.__instance = self
 
 	@classmethod
@@ -146,9 +153,6 @@ class PlexManager(object):
 		"""
 		self.myplex = MyPlexService(self)
 
-	def getLocalUsers(self):
-		return self.myplex.getLocalUsers()
-	
 	def getMyPlexServers(self):	return self.myplex.allServers()
 	def getMyPlexRemoteServers(self): return self.myplex.remoteServers
 	def getMyPlexLocalServers(self): return self.myplex.localServers
@@ -227,8 +231,15 @@ class PlexManager(object):
 		return self.SUCCESS
 
 	def myPlexLogin(self, username, password):
-		self.myplex.login(username, password)
-		return self.myplex.isAuthenticated()
+		try:
+			self.myplex.login(username, password)
+		except PlexRequestError, e:
+			if e.httpCode == 401:
+				#Not Authorised
+				return self.ERR_MPLEX_AUTH_FAILED
+		if self.myplex.isAuthenticated():
+			return self.SUCCESS
+		return self.ERR_MYPLEX_NOT_AUTHENTICATED
 
 ##
 # Encapsulates the MyPlex online service
@@ -288,17 +299,17 @@ class MyPlexService(object):
 			util.logDebug("Authentication Token set: "+self.authenticationToken)
 
 	def isAuthenticated(self):
-		return self.authenticationToken != None
+		return self.authenticationToken is not None
 
 	def getQueueLinkData(self, key):
 		url = key+"&auth_token="+self.__getUserToken()
-		if not self.authenticationToken: return url, None
+		if not self.authenticationToken: raise PlexAuthenticationError()
 		data = PlexManager.getData(url)
 		return data, url
 		
 	def getQueueData(self):
 		url = MyPlexService.QUEUE_URL % self.__getUserToken()
-		if not self.authenticationToken: return url, None
+		if not self.authenticationToken: raise PlexAuthenticationError()
 		data = PlexManager.getData(url)
 		return data, url
 
@@ -349,8 +360,8 @@ class MyPlexService(object):
 		if self.userToken: return self.userToken
 		return self.authenticationToken
 
-	def getLocalUsers(self):
-		if not self.authenticationToken: return None
+	def getLocalUserData(self):
+		if not self.authenticationToken: raise PlexAuthenticationError()
 		url = MyPlexService.GETUSERS_URL % (self.authenticationToken)
 		data = PlexManager.getData(url)
 		return data, url
@@ -412,9 +423,27 @@ class PlexServer(object):
 	MUSIC_TRANSCODE_URL = "/music/:/transcode/generic.mp3"
 	UNWATCHED_URL = "/:/unscrobble"
 	WATCHED_URL = "/:/scrobble"
+	CLIENTS_URL = "/clients"
 
 	#Transcode qualities
-	QUALITY_LIST = ["320kbps","720kbps","1.5mbps","2mbps","3mbps","4mbps","8mbps","10mbps","12mbps","20mbps"]
+	QUALITY_LIST = [
+		{'label': '320kbps', 'videoResolution': '420x240', 'maxVideoBitrate': '320', 'videoQuality': '30'},
+		{'label': '720kbps', 'videoResolution': '576x320', 'maxVideoBitrate': '720', 'videoQuality': '40'},
+		{'label': '1.5mbps', 'videoResolution': '720x480', 'maxVideoBitrate': '1500', 'videoQuality': '60'},
+		{'label': '2mbps', 'videoResolution': '1024x768', 'maxVideoBitrate': '2000', 'videoQuality': '75'},
+		{'label': '3mbps', 'videoResolution': '1280x720', 'maxVideoBitrate': '3000', 'videoQuality': '100'},
+		{'label': '4mbps', 'videoResolution': '1280x720', 'maxVideoBitrate': '4000', 'videoQuality': '60'},
+		{'label': '8mbps', 'videoResolution': '1920x1080', 'maxVideoBitrate': '8000', 'videoQuality': '75'},
+		{'label': '10mbps', 'videoResolution': '1920x1080', 'maxVideoBitrate': '10000', 'videoQuality': '90'},
+		{'label': '20mbps', 'videoResolution': '1920x1080', 'maxVideoBitrate': '20000', 'videoQuality': '100'}
+	]
+
+	@classmethod
+	def getQualitySettings(cls, quality):
+		for setting in cls.QUALITY_LIST:
+			if setting['label'] == quality:
+				return setting
+		return cls.QUALITY_LIST[2]
 
 	def addConnection(self):
 		conn = PlexServerConnection()
@@ -434,7 +463,7 @@ class PlexServer(object):
 			url = self.__getRootUrl()
 			data = http.Get(url)
 			code = http.GetHttpResponseCode()
-			util.logDebug('Connecting to server: %s' % url)
+			util.logInfo('Connecting to server: %s...' % url)
 			if http.ResultUnauthorised():
 				util.logDebug('Unauthorised - token required: %s' % url)
 				self.isTokenRequired = True
@@ -519,7 +548,6 @@ class PlexServer(object):
 
 	def __init__(self):
 		self.accessToken = None
-		self.userAccessToken = None
 		self.isTokenRequired = False
 		self.isLocal = False
 		self.appearsOffline = False
@@ -570,8 +598,9 @@ class PlexServer(object):
 		else: url_query = currentArgs
 
 		url_parts[4] = urllib.urlencode(url_query)
+		newArgs = dict(cgi.parse_qsl(url_parts[4]))
 		accessToken = self.accessToken
-		if accessToken:
+		if accessToken and not "X-Plex-Token" in newArgs:
 			if url_parts[4] != "":
 				url_parts[4] = url_parts[4] + "&X-Plex-Token=" + accessToken
 			else:
@@ -580,19 +609,16 @@ class PlexServer(object):
 		url = urlparse.urlunparse(url_parts)
 		return url
 	
-	#ME  /:/playQueues?type=video&repeat=0&shuffle=0&includeChapters=1&uri=library%2F8eb19616-0d8b-49ab-a6c1-b7ab72878074%2Fitem%2F%2Flibrary%2Fmetadata%2F40080&X-Plex-Token=sgsfVo6jH59RtFAW4ByS
-	#/playQueues?type=video&includeChapters=1&uri=library%3A%2F%2F8eb19616-0d8b-49ab-a6c1-b7ab72878074%2Fitem%2F%252Flibrary%252Fmetadata%252F40112&shuffle=0&repeat=0
-	#library://8eb19616-0d8b-49ab-a6c1-b7ab72878074/item/%2Flibrary%2Fmetadata%2F40112
-	def getPlayQueueId_TEST(self, videoNode):
+	def getPlayQueueItemId(self, videoNode):
 		args = dict()
 		args['type']='video'
 		args['includeChapters']='1'
 		args['uri']='library://%s/item/%s' % (videoNode.attrib['librarySectionUUID'],urllib.quote_plus(videoNode.attrib['key']))
 		args['shuffle']='0'
 		args['repeat']='0'
+		args['X-Plex-Client-Identifier'] = PlexManager.Instance().xPlexClientIdentifier
 		http = PlexManager.Instance().buildPlexHttpRequest()
-		http.SetHttpHeader('X-Plex-Token', self.userAccessToken)
-		http.SetHttpHeader('X-Plex-Client-Identifier',PlexManager.Instance().xPlexClientIdentifier)
+		http.SetHttpHeader('X-Plex-Token', self.accessToken)
 		url = self.getUrl("/playQueues",args)
 		data = http.Post(url,'')
 		#playQueueItemID
@@ -600,13 +626,7 @@ class PlexServer(object):
 		for child in ElementTree.fromstring(data):
 			return child.attrib.get('playQueueItemID',None)
 
-	#/:/progress?identifier=com.plexapp.plugins.library&key=40137&time=165000&X-Plex-Token=sgsfVo6jH59RtFAW4ByS
-	#/:/timeline?ratingKey=40112&key=%2Flibrary%2Fmetadata%2F40112&state=playing&playQueueItemID=3979&time=216754&duration=2544384&X-Plex-Token=sgsfVo6jH59RtFAW4ByS
-	#/:/timeline?type=video&repeat=0&shuffle=0&includeChapters=1&uri=library%2F8eb19616-0d8b-49ab-a6c1-b7ab72878074%2Fitem%2F%2Flibrary%2Fmetadata%2F40080&X-Plex-Token=sgsfVo6jH59RtFAW4ByS
-	#TODO: It looks like the client has to be registered for this to work
-	#For users this generates an X-Plex-Client-Identifier error on the Plex Server
-	#I believe because it can't find the registered client
-	def setMediaPlayedPosition_TEST(self, videoNode, queueId, positionMsec):
+	def setMediaPlayedPosition(self, videoNode, queueId, positionMsec):
 		"""
 		Update media played position for onDeck and resuming behaviour
 		An item will be added to the deck by plex based on this call
@@ -618,30 +638,27 @@ class PlexServer(object):
 		args['playQueueItemID']=queueId
 		args['time']=str(positionMsec)
 		args['duration']=videoNode.attrib['duration']
+		#args['X-Plex-Client-Identifier'] = PlexManager.Instance().xPlexClientIdentifier
+
+		"""
+		http = mc.Http()
+		http.SetHttpHeader("X-Plex-Platform", plexManager.xPlexPlatform)
+		http.SetHttpHeader("X-Plex-Platform-Version", plexManager.xPlexPlatformVersion)
+		http.SetHttpHeader("X-Plex-Provides", plexManager.xPlexProvides)
+		http.SetHttpHeader("X-Plex-Product", plexManager.xPlexProduct)
+		http.SetHttpHeader("X-Plex-Version", plexManager.xPlexVersion)
+		http.SetHttpHeader("X-Plex-Device", plexManager.xPlexDevice)
+		http.SetHttpHeader("X-Plex-Client-Identifier", plexManager.xPlexClientIdentifier)
+
+		util.logDebug("Setting media key=[%s] to position=[%s]" % (args['ratingKey'],str(positionMsec)))
+		http.Get(self.getUrl("/:/timeline",args))
+		"""
 		http = PlexManager.Instance().buildPlexHttpRequest()
-		http.SetHttpHeader('X-Plex-Token', self.userAccessToken)
-		http.SetHttpHeader('X-Plex-Client-Identifier',PlexManager.Instance().xPlexClientIdentifier)
+		http.SetHttpHeader('X-Plex-Token', self.accessToken)
 		url = self.getUrl("/:/timeline",args)
 		util.logDebug("Setting media key=[%s] to position=[%s]" % (args['ratingKey'],str(positionMsec)))
 		http.Get(url)
 
-	def setMediaPlayedPosition(self, videoNode, queueId, positionMsec):
-		"""
-		Update media played position for onDeck and resuming behaviour
-		An item will be added to the deck by plex based on this call
-		"""
-		ratingKey=videoNode.attrib['ratingKey']
-		key=videoNode.attrib['key']
-
-		args = dict()
-		args['key']=ratingKey
-		args['identifier']="com.plexapp.plugins.library"
-		args['time']=str(positionMsec)
-		url = self.getUrl("/:/progress",args)
-		http = PlexManager.Instance().buildPlexHttpRequest()
-		util.logDebug("Setting media key=[%s] to position=[%s]" % (ratingKey,str(positionMsec)))
-		util.Http().Get(url)
-	
 	def setMediaWatched(self, ratingKey):
 		"""
 		Set media as watched
@@ -746,48 +763,10 @@ class PlexServer(object):
 		args['X-Plex-Platform-Version']=manager.xPlexPlatformVersion
 		args['X-Plex-Device']=manager.xPlexDevice
 		args['Accept-Language']="en"
-		
-		if quality == QUALITY_LIST[0]:
-			args['videoResolution'] = "420x240"
-			args['maxVideoBitrate'] = "320"
-			args['videoQuality'] = "30"
-		elif quality == QUALITY_LIST[1]:
-			args['videoResolution'] = "576x320"
-			args['maxVideoBitrate'] = "720"
-			args['videoQuality'] = "40"
-		elif quality == QUALITY_LIST[2]:
-			args['videoResolution'] = "720x480"
-			args['maxVideoBitrate'] = "1500"
-			args['videoQuality'] = "60"
-		elif quality == QUALITY_LIST[3]:
-			args['videoResolution'] = "1024x768"
-			args['maxVideoBitrate'] = "2000"
-			args['videoQuality'] = "60"
-		elif quality == QUALITY_LIST[4]:
-			args['videoResolution'] = "1280x720"
-			args['maxVideoBitrate'] = "3000"
-			args['videoQuality'] = "75"
-		elif quality == QUALITY_LIST[5]:
-			args['videoResolution'] = "1280x720"
-			args['maxVideoBitrate'] = "4000"
-			args['videoQuality'] = "100"
-		elif quality == QUALITY_LIST[6]:
-			args['videoResolution']= "1920x1080"
-			args['maxVideoBitrate'] = "8000"
-			args['videoQuality'] = "60"
-		elif quality == QUALITY_LIST[7]:
-			args['videoResolution']= "1920x1080"
-			args['maxVideoBitrate'] = "10000"
-			args['videoQuality'] = "75"
-		elif quality == QUALITY_LIST[8]:
-			args['videoResolution']= "1920x1080"
-			args['maxVideoBitrate'] = "12000"
-			args['videoQuality'] = "90"
-		elif quality == QUALITY_LIST[9]:
-			args['videoResolution'] = "1920x1080"
-			args['maxVideoBitrate'] = "20000"
-			args['videoQuality'] = "100"
-
+		quality_settings = self.getQualitySettings(quality)
+		args['videoResolution'] = quality_settings['videoResolution']
+		args['maxVideoBitrate'] = quality_settings['maxVideoBitrate']
+		args['videoQuality'] = quality_settings['videoQuality']
 		url = self.getUrl(PlexServer.TRANSCODE_URL, args)
 		util.logDebug("-->Setting transcode stream: "+url)
 		return url
@@ -825,6 +804,10 @@ class PlexServer(object):
 		url = self.getUrl(PlexServer.PLAYLIST_URL)
 		return PlexManager.getData(url), url
 	
+	def getClientData(self):
+		url = self.getUrl(PlexServer.CLIENTS_URL)
+		return PlexManager.getData(url), url
+
 	def getChannelData(self):
 		"""
 		Returns the channel url of the server

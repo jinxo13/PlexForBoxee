@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<window type="dialog" id="15001">
+<window type="window" id="15001">
 	<defaultcontrol always="true">320</defaultcontrol>
 	<allowoverlay>no</allowoverlay>
 	<onload lang="python">
@@ -9,8 +9,14 @@ playDialog.load()
 ]]>
 	</onload>
 	<onunload lang="python">playDialog.unload()</onunload>
+  
 	<controls>
-		<!-- LIST ===================================================================-->
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- LIST ===================================================================-->
 		<control type="list" id="100">
 			<width>1</width>
 			<height>1</height>
@@ -49,9 +55,43 @@ playDialog.load()
 		</control>
 		
 		<!-- Thumb and media tags (720p etc) ============================================-->
-		<control type="group">
+		<control type="group" id="101">
 			<height>720</height>
 			<width>250</width>
+		
+			<control type="button" id="102">
+				<posx>5</posx>
+				<posy>5</posy>
+				<width>64</width>
+				<height>64</height>
+				<texturefocus>buttons/prev_focus.png</texturefocus>
+				<texturenofocus>buttons/prev.png</texturenofocus>
+				<visible>!IsEmpty(Container(100).ListItem.Property(custom:prev_episode))</visible>
+				<ondown>301</ondown>
+				<onright>103</onright>
+				<onclick lang="python">
+<![CDATA[			
+playDialog.showPrevEpisode()
+]]>
+				</onclick>
+			</control>
+			
+			<control type="button" id="103">
+				<posx>74</posx>
+				<posy>5</posy>
+				<width>64</width>
+				<height>64</height>
+				<visible>!IsEmpty(Container(100).ListItem.Property(custom:next_episode))</visible>
+				<texturefocus>buttons/next_focus.png</texturefocus>
+				<texturenofocus>buttons/next.png</texturenofocus>
+				<ondown>301</ondown>
+				<onleft>102</onleft>
+				<onclick lang="python">
+<![CDATA[			
+playDialog.showNextEpisode()
+]]>
+				</onclick>
+			</control>		
 		
 			<!-- THUMB ==================================================================-->
 			<control type="image">
@@ -246,7 +286,7 @@ playDialog.load()
 			</control>
 		</control>
 		<!-- BUTTONS ================================================================-->
-		<control type="group">
+		<control type="group" id="301">
 			<posx>0</posx>
 			<posy>640</posy>
 			<width>1280</width>
@@ -258,6 +298,7 @@ playDialog.load()
 				<height>64</height>
 				<texturefocus>buttons/play_focus.png</texturefocus>
 				<texturenofocus>buttons/play.png</texturenofocus>
+				<onup>101</onup>
 				<onright lang="python">
 <![CDATA[
 if playDialog.mediaList.IsEnabled():
@@ -284,6 +325,7 @@ playDialog.play()
 			<focusposition>0</focusposition>
 			<preloaditems>2</preloaditems>
 			<!--visible>IntegerGreaterThan(Container(340).NumItems,1)</visible-->
+			<onup>101</onup>
 			<onleft lang="python">
 <![CDATA[
 playDialog.checkMediaSwitch()
@@ -370,6 +412,7 @@ elif playDialog.audioList.IsVisible():
 			<preloaditems>2</preloaditems>
 			<visible>IntegerGreaterThan(Container(310).NumItems,1)</visible>
 			<onleft>340</onleft>
+			<onup>101</onup>
 			<onleft lang="python">
 <![CDATA[
 if playDialog.mediaList.IsEnabled():
@@ -444,6 +487,7 @@ else:
 			<focusposition>0</focusposition>
 			<preloaditems>2</preloaditems>
 			<visible>IntegerGreaterThan(Container(330).NumItems,1)</visible>
+			<onup>101</onup>
 			<onleft lang="python">
 <![CDATA[
 if playDialog.subtitleList.IsVisible():
@@ -508,7 +552,6 @@ else:
 				</control>				
 			</focusedlayout>
 		</control>
-			
 
 		</control>
 			

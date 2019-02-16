@@ -2,11 +2,21 @@
 <window type="window" id="14001">
 	<defaultcontrol>200</defaultcontrol>
 	<allowoverlay>no</allowoverlay>
-	<onload lang="python">plexee.getDirectoryWindow().load()</onload>
-	<onunload lang="python">plexee.getDirectoryWindow().unload()</onunload>
+	<onload lang="python">
+<![CDATA[
+dirWindow = plexee.getDirectoryWindow()
+dirWindow.load()
+]]>	
+	</onload>	
+	<onunload lang="python">dirWindow.unload()</onunload>
 	
-	<controls>		
-		<!-- BACKGROUND =============================================================-->
+	<controls>
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- BACKGROUND =============================================================-->
 		<!-- display art -->
 		<control type="image">
 			<width>1280</width>
@@ -81,10 +91,10 @@
 			<height>560</height>
 			
 			<onright>300</onright>
-			<onup lang="python">plexee.getDirectoryWindow().moveUpFromContent()</onup>
+			<onup lang="python">dirWindow.moveUpFromContent()</onup>
 			
 			<content type="action">
-				<onclick lang="Python">plexee.getDirectoryWindow().menuClicked()</onclick>
+				<onclick lang="Python">dirWindow.menuClicked()</onclick>
 			</content>
 			
 			<itemlayout height="40">
@@ -183,10 +193,10 @@
 			<pagecontrol>2000</pagecontrol>
 			
 			<onleft>200</onleft>
-			<onup lang="python">plexee.getDirectoryWindow().moveUpFromContent()</onup>
+			<onup lang="python">dirWindow.moveUpFromContent()</onup>
 			
 			<content type="action">
-				<onclick lang="Python">plexee.getDirectoryWindow().contentClicked()</onclick>
+				<onclick lang="Python">dirWindow.contentClicked()</onclick>
 			</content>
 			
 			<itemlayout width="175" height="300">
@@ -215,7 +225,7 @@
 					<aligny>center</aligny>
 					<font>font12</font>
 					<textcolor>white</textcolor>
-					<label>[B]*$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
+					<label>[B]$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
 					<visible>IntegerGreaterThan(ListItem.Property(custom:unwatchedcount), 0)</visible>
 				</control>
 				
@@ -267,7 +277,7 @@
 					<aligny>center</aligny>
 					<font>font12</font>
 					<textcolor>white</textcolor>
-					<label>[B]*$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
+					<label>[B]$INFO[ListItem.Property(custom:unwatchedcount)][/B]</label>
 					<visible>IntegerGreaterThan(ListItem.Property(custom:unwatchedcount), 0)</visible>
 				</control>
 
@@ -372,7 +382,7 @@
 			<texturenofocus>buttons/home.png</texturenofocus>
 			<texturefocus>buttons/home_focus.png</texturefocus>
 			
-			<onclick lang="python">plexee.getDirectoryWindow().homeClicked()</onclick>
+			<onclick lang="python">dirWindow.homeClicked()</onclick>
 		</control>
 	</controls>
 </window>

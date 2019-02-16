@@ -5,15 +5,18 @@
 	<onload lang="python">
 <![CDATA[
 photoDialog = plexee.getPhotoDialog()
+photoDialog.load()
 ]]>
 	</onload>
-	<onunload lang="python">
-<![CDATA[
-photoDialog.stopSlideshow()
-]]>
-	</onunload>
+	<onunload lang="python">photoDialog.unload()</onunload>
+
 	<controls>
-		<!-- LIST ===================================================================-->
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- LIST ===================================================================-->
 		<control type="list" id="100">
 			<width>1</width>
 			<height>1</height>
@@ -61,7 +64,7 @@ photoDialog.rotate(clockwise=False)
 			</onup>
 			<onleft lang="python">
 <![CDATA[
-photoDialog.showNextImage(forward=False)
+photoDialog.showPrevImage()
 ]]>
 			</onleft>
 			<onright lang="python">
@@ -306,7 +309,7 @@ photoDialog.toggleMenu(False)
 					</onup>
 					<onclick lang="python">
 <![CDATA[			
-photoDialog.startSlideshow()
+photoDialog.startSlideShow()
 ]]>
 					</onclick>
 				</control>

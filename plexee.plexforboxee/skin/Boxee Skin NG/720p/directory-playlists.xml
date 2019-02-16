@@ -2,9 +2,21 @@
 <window type="window" id="14004">
 	<defaultcontrol>200</defaultcontrol>
 	<allowoverlay>no</allowoverlay>
+	<onload lang="python">
+<![CDATA[
+playlistWindow = plexee.getPlaylistWindow()
+playlistWindow.load()
+]]>	
+	</onload>	
+	<onunload lang="python">playlistWindow.unload()</onunload>
 	
-	<controls>		
-		<!-- BACKGROUND =============================================================-->
+	<controls>
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- BACKGROUND =============================================================-->
 		<!-- display art -->
 		<control type="image">
 			<width>1280</width>

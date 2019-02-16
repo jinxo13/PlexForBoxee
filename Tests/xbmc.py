@@ -1,6 +1,7 @@
 ﻿import constants
 import platform
 import os
+import time
 
 PROFILE_PATH = ''
 
@@ -31,3 +32,9 @@ def clearMockProfilePath():
 def translatePath(path):
 	if path == 'special://profile':
 		return __getProfilePath()
+
+def executebuiltin(cmd):
+	pass
+
+def sleep(secs):
+	time.sleep(secs)

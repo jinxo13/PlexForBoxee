@@ -12,7 +12,12 @@ userDialog.load()
 	<onunload lang="python">userDialog.unload()</onunload>
 	
 	<controls>
-		<!-- BACKGROUND =============================================================-->
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    <!-- BACKGROUND =============================================================-->
 		
 		<!-- dim the lower window -->
 		<control type="image">

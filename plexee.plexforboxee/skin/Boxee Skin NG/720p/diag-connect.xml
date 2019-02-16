@@ -13,8 +13,14 @@ connectDialog.load()
 	
 	<controls>
 		<!-- BACKGROUND =============================================================-->
-		
-		<!-- dim the lower window -->
+
+    <!-- page id -->
+    <control type="label" id="1">
+      <visible>False</visible>
+      <label></label>
+    </control>
+    
+    <!-- dim the lower window -->
 		<control type="image">
 			<width>1280</width>
 			<height>720</height>

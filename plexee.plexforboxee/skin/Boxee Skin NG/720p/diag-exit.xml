@@ -1,26 +1,16 @@
 <?xml version="1.0"?>
 <window type="window" id="14010">
 	<allowoverlay>no</allowoverlay>
-	<onload lang="python">
-<![CDATA[
-config = plexee.config
+	<onload lang="python">plexee.getExitWindow().load()</onload>
+	<onunload lang="python">plexee.getExitWindow().unload()</onunload>	
 
-if config.hasStarted():
-	selection = mc.ShowDialogConfirm("Exit Plexee?", "Are you sure you wish to exit Plexee?", "No", "Yes")
-	if selection: #exit app
-		if mc:
-			mc.CloseWindow()
-	else:
-		if mc:
-			plexee.getHomeWindow().activate()
-else:
-	config.setHasStarted(True)
-	plexee.getHomeWindow().activate()
-	plexee.initPlexee()
-		
-]]>
-	</onload>
 	<controls>
+		<!-- page id -->
+		<control type="label" id="1">
+		  <visible>False</visible>
+		  <label></label>
+		</control>
+
 		<control type="image">
 			<width>1280</width>
 			<height>720</height>

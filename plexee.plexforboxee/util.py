@@ -11,6 +11,10 @@ from elementtree import ElementTree
 
 class Constants(object):
 	IS_DEBUG = -1
+	IS_DEBUG_CLIENT = -1
+	DEBUG_CLIENT_GROUP = 'client'
+	IS_TEST_MODE = -1
+	TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def buildUrl(url, params):
 	url_parts = list(urlparse.urlparse(url))
@@ -81,36 +85,46 @@ def msToFormattedDuration(ms, humanReadable = True):
 		duration = duration + durParts[1].rjust(2,'0')+':'+durParts[2].rjust(2,'0')
 	return duration
 
-def logDebug(msg):
+def checkConstants(logType):
+	if Constants.IS_TEST_MODE == -1:
+		Constants.IS_TEST_MODE = mc.GetDeviceId() == "unittest"
+
 	if Constants.IS_DEBUG == -1:
-		if mc.GetApp().GetLocalConfig().GetValue("debug") == '1':
-			Constants.IS_DEBUG = 1
-		else:
-			Constants.IS_DEBUG = 0
-		
-#	msg = cleanString(msg)
-	if Constants.IS_DEBUG == 1:
+		Constants.IS_DEBUG = mc.GetApp().GetLocalConfig().GetValue("debug") == '1'
+
+	if Constants.IS_DEBUG_CLIENT == -1:
+		Constants.IS_DEBUG_CLIENT = mc.GetApp().GetLocalConfig().GetValue("debugclient") == '1'
+
+	if Constants.IS_TEST_MODE:
+		return '%s %s' % (datetime.datetime.now().strftime(Constants.TIME_FORMAT), logType)
+	else:
+		return logType
+
+def logDebug(msg, group=None):
+	prefix = checkConstants('DEBUG')
+	if (Constants.IS_DEBUG and group is None) or (Constants.IS_DEBUG_CLIENT and group == Constants.DEBUG_CLIENT_GROUP):
 		try:
 			stack = inspect.stack()
 			the_class = stack[1][0].f_locals["self"].__class__
 			the_method = stack[1][0].f_code.co_name
-			print "DEBUG Plexee: %s, %s: %s" % (the_class, the_method, str(msg))
+			print "%s Plexee: %s, %s: %s" % (prefix, the_class, the_method, str(msg))
 		except:
 			try:
-				print("DEBUG Plexee: " + str(msg))
+				print("%s Plexee: %s" % (prefix, str(msg)))
 			except:
-				pass
-	else:
-		pass
-		#print("DEBUG Plexee: " + str(msg))
+				print("%s Plexee: %s" % (prefix, 'Error logging debug message....'))
 
 def logInfo(msg):
-#	msg = cleanString(msg)
-	print("INFO  Plexee: "+str(msg))
+	prefix = checkConstants('INFO')
+	print("%s  Plexee: %s" % (prefix, str(msg)))
 	
+def logWarn(msg):
+	prefix = checkConstants('WARN')
+	print("%s  Plexee: %s" % (prefix, str(msg)))
+
 def logError(msg, trace = None):
-#	msg = cleanString(msg)
-	print("ERROR Plexee: "+str(msg))
+	prefix = checkConstants('ERROR')
+	print("%s Plexee: %s" % (prefix, str(msg)))
 	if trace is not None:
 		print('-'*60)
 		print(trace)
@@ -229,8 +243,13 @@ class Http(object):
 		return 'Unexpected response %s' % codeMsg
 
 	def __init__(self):
-		self.opener = urllib2.build_opener(urllib2.HTTPHandler)
 		self.headers = dict()
+		#self.headers['User-Agent'] = 'Boxee/Beta'
+		#self.headers['Connection'] = 'keep-alive'
+		#self.headers['Accept-Language'] = 'en'
+		#self.headers['Accept'] = 'text/plain, */*; q=0.01'
+		#self.headers['Accept-Encoding'] ='gzip, deflate, sdch'
+
 		self.code = 0
 		self.url = ''
 		self.method = ''
@@ -242,15 +261,31 @@ class Http(object):
 		logDebug('%s %s' % (method, url))
 		self.url = url
 		self.method = method
-		if data != '':
-			request = urllib2.Request(url, data)
-		else:
-			request = urllib2.Request(url)
-		request.get_method = lambda: method
-		for p in self.headers:
-			request.add_header(p, self.headers[p])
+		if method == 'GET':
+			#Bug with GET with headers not sent correctly...
+			http = mc.Http()
+			for p in self.headers:
+				http.SetHttpHeader(p, self.headers[p])
+			response = None
+			try:
+				response = http.Get(url)
+				self.code = http.GetHttpResponseCode()
+				return response
+			except urllib2.HTTPError, e:
+				self.code = e.code
+				logDebug(self.GetResponseMsg())
+				if self.ResultSuccess(): return e.read()
+				return None
+			except urllib2.URLError:
+				#Failed to access
+				self.code = Http.HTTP_CONNECT_FAILED
+				logDebug(self.GetResponseMsg())
+				return None
+
 		try:
-			resp = self.opener.open(request)
+			request = urllib2.Request(url, headers=self.headers)
+			request.get_method = lambda: method
+			resp = urllib2.urlopen(request)
 			self.code = resp.code
 			logDebug(self.GetResponseMsg())
 			return resp.read()
